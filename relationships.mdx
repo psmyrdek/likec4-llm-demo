@@ -1,0 +1,247 @@
+---
+title: Relationships
+description: How to define connections, data flows and interactions inside your architecture with LikeC4
+sidebar: 
+  label: Relationships
+  order: 4
+tableOfContents:
+  minHeadingLevel: 4
+  maxHeadingLevel: 6
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Relationships describe the connections, data flows and interactions of the elements,  
+and created with the **`->`** operator:
+
+```likec4
+model {
+  customer = actor 'Customer'
+  cloud = service 'Cloud'
+
+  customer -> cloud
+}
+```
+
+#### Relationship kinds
+
+Relationships can be "kinded":
+
+```likec4
+specification {
+  element system
+  // Define relationship kind
+  relationship async
+  relationship uses
+}
+
+model {
+  system1 = system 'System 1'
+  system2 = system 'System 2'
+
+  system1 -[async]-> system2
+
+  // Or prefix with '.' to use the kind
+  system1 .uses system2
+}
+```
+
+This allows us to express and add more semantics to the interactions between the elements,
+for instance, from a technology perspective (REST, GRPC, GraphQL, Sync/Async, etc.)
+or from a business perspective (delegation, inform, accountability, etc.).
+
+It's up to you to define the relationship kinds that make sense for your context.
+
+<Aside type='tip'>
+  With kinds you can customize the styling of the relationships, see [styling](/dsl/styling#relationship)
+</Aside>
+
+#### Relationship definition
+
+Relationships may be nested
+
+```likec4
+model {
+  actor customer
+  service cloud {
+    component backend
+    component frontend
+
+    frontend -> backend
+    customer -> frontend
+  }
+}
+```
+
+Use `it` or `this` to refer parent as the source:
+
+```likec4
+model {
+  customer = actor {
+    it -> frontend 'opens in browser'
+    this -> frontend 'opens in browser'
+  }
+}
+```
+
+or to refer as the target:
+
+```likec4
+model {
+  component frontend {
+    customer -> it 'opens in browser'
+    customer -> this 'opens in browser'
+  }
+}
+```
+
+Nested relationships may be _"sourceless"_, then the source is the parent element
+
+```likec4
+specification {
+  relationship graphql
+}
+model {
+  customer = actor {
+    // same as customer -> frontend
+    -> frontend 'opens in browser' 
+  }
+  service cloud {
+    component backend
+    component frontend {
+      // same as frontend -[graphql]-> backend
+      -[graphql]-> backend 'requests data'  
+    }
+  }
+}
+```
+
+:::caution
+
+_"sourceless"_ relationships must be nested:
+
+```likec4
+model {  
+  -> backend // ⛔️ Error: model can't be a source
+}
+```
+:::
+
+#### Relationship Properties
+
+##### Title
+
+Relationships may have a title (and better to have one):
+
+```likec4 {7-8, 12}
+model {
+  actor customer
+  service cloud {
+    component backend
+    component frontend
+
+    // Title can be inlined
+    frontend -> backend 'requests data to display'
+  }
+
+  customer -> frontend {
+    title 'opens in browser' // or nested
+  }
+}
+```
+
+##### Technology
+
+```likec4
+model {
+  customer -> frontend 'opens in browser' {
+    technology 'HTTPS'
+  }
+
+  // Or in a shorter way
+  customer -> frontend 'opens in browser' 'HTTPS'
+}
+```
+
+##### Description
+
+```likec4
+model {
+  customer -> frontend 'opens in browser' {
+    description 'Customer opens the frontend in the browser to interact with the system'
+  }
+}
+```
+
+:::caution
+
+Description is not displayed in the diagrams yet  
+In progress
+
+:::
+
+##### Metadata
+
+Same as [elements metadata](/dsl/model/#element-metadata):
+
+```likec4
+model {
+  customer -> frontend 'opens in browser' {
+    metadata {
+      prop1 'value1'
+      prop2 'value2'
+    }
+  }
+}
+```
+
+##### Tags
+
+Relationships may be tagged
+
+```likec4
+model {
+  // inlined
+  frontend -> backend 'requests data' #graphql #team1
+
+  // or nested
+  customer -> frontend 'opens in browser' {
+    #graphql #team1 
+  }
+}
+```
+
+##### Links
+
+Relationships may have multiple links:
+
+```likec4 copy
+model {
+  customer -> frontend 'opens in browser' {
+    // External link
+    link https://any-external-link.com
+
+    // or any URI
+    link ssh://bastion.internal 'SSH'
+
+    // or relative link to navigate to sources
+    link ../src/index.ts#L1-L10
+  }
+}
+```
+
+
+##### Navigate To
+
+Relationship may have a `navigateTo` property, which is a link to some [dynamic view](/dsl/dynamic-views).  
+This allows to "zoom-in" and see more details about this relationship.
+
+```likec4 copy
+model {
+  webApp -> backend.api {
+    title 'requests data for the dashboard'
+    navigateTo dashboardRequestFlow
+  }
+  
+}
+```

@@ -1,0 +1,33 @@
+specification {
+  // Define custom element types for our diagram
+  element container
+  element actor
+}
+
+model {
+  // Container elements with detailed descriptions
+  sftp = container "SFTP" {
+    description "A secure FTP server for transferring files between systems."
+  }
+
+  worker = container "Worker" {
+    description "Processes and consumes files from the SFTP server, handling transfers and initial ingestion."
+  }
+
+  appDB = container "App DB" "Database" {
+    description "Centralized database that stores and manages persistent application data for both the Worker and WebApp."
+  }
+
+  webapp = container "WebApp" {
+    description "A web application providing a user interface for system interaction, connecting to the App DB for data retrieval and updates."
+  }
+
+  // Relationships between containers
+  worker -> sftp "Consumes files"
+  worker -> appDB "Connects to"
+  webapp -> appDB "Connects to"
+
+  // Person element and its connection
+  user = actor "User"
+  user -> webapp "Interacts via the web interface"
+}
